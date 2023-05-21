@@ -1,152 +1,89 @@
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
   tags = {
-    "Name"        = "epoch-vpc",
-    "Terraformed" = "true"
+    "Name" = "epoch-vpc"
   }
 }
 
-resource "aws_subnet" "public1" {
+resource "aws_subnet" "public" {
+  count             = length(local.public_cidr)
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.0.0/24"
-  availability_zone = "sa-east-1a"
+  cidr_block        = local.public_cidr[count.index]
+  availability_zone = local.availability_zones[count.index]
   tags = {
-    "Name"        = "epoch-subnet-pub1",
-    "Terraformed" = "true"
+    "Name" = "epoch-subnet-pub${count.index + 1}"
   }
 }
 
-resource "aws_subnet" "public2" {
+resource "aws_subnet" "private" {
+  count             = length(local.private_cidr)
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.1.0/24"
-  availability_zone = "sa-east-1b"
+  cidr_block        = local.private_cidr[count.index]
+  availability_zone = local.availability_zones[count.index]
   tags = {
-    "Name"        = "epoch-subnet-pub2",
-    "Terraformed" = "true"
-  }
-}
-
-resource "aws_subnet" "private1" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.3.0/24"
-  availability_zone = "sa-east-1a"
-  tags = {
-    "Name"        = "epoch-subnet-priv1",
-    "Terraformed" = "true"
-  }
-}
-
-resource "aws_subnet" "private2" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.4.0/24"
-  availability_zone = "sa-east-1b"
-  tags = {
-    "Name"        = "epoch-subnet-priv2",
-    "Terraformed" = "true"
+    "Name" = "epoch-subnet-priv${count.index + 1}"
   }
 }
 
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
   tags = {
-    "Name"        = "epoch-igw",
-    "Terraformed" = "true"
+    "Name" = "epoch-igw"
   }
 
 }
 
-resource "aws_route_table" "main" {
+resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.igw.id
   }
   tags = {
-    Name          = "epoch-rtb-main",
-    "Terraformed" = "true"
+    Name = "epoch-rtb-main"
   }
 }
 
-resource "aws_route_table_association" "public1" {
-  subnet_id      = aws_subnet.public1.id
-  route_table_id = aws_route_table.main.id
+resource "aws_route_table_association" "public" {
+  count          = length(local.public_cidr)
+  subnet_id      = aws_subnet.public[count.index].id
+  route_table_id = aws_route_table.public.id
 }
 
-resource "aws_route_table_association" "public2" {
-  subnet_id      = aws_subnet.public2.id
-  route_table_id = aws_route_table.main.id
-}
-
-resource "aws_eip" "nat1" {
-  vpc = true
+resource "aws_eip" "nat" {
+  count = length(local.public_cidr)
+  vpc   = true
   tags = {
-    Name          = "epoch-eip-nat1",
-    "Terraformed" = "true"
+    Name = "epoch-eip-nat${count.index}"
   }
 }
 
-resource "aws_eip" "nat2" {
-  vpc = true
+resource "aws_nat_gateway" "g" {
+  count         = length(local.public_cidr)
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
   tags = {
-    Name          = "epoch-eip-nat2",
-    "Terraformed" = "true"
-  }
-}
-
-resource "aws_nat_gateway" "g1" {
-  allocation_id = aws_eip.nat1.id
-  subnet_id     = aws_subnet.public1.id
-  tags = {
-    Name          = "epoch-ngw1",
-    "Terraformed" = "true"
+    Name = "epoch-ngw${count.index}"
   }
   depends_on = [
     aws_internet_gateway.igw
   ]
 }
 
-resource "aws_nat_gateway" "g2" {
-  allocation_id = aws_eip.nat2.id
-  subnet_id     = aws_subnet.public2.id
-  tags = {
-    Name          = "epoch-ngw2",
-    "Terraformed" = "true"
-  }
-  depends_on = [
-    aws_internet_gateway.igw
-  ]
-}
-
-resource "aws_route_table" "private1" {
+resource "aws_route_table" "private" {
+  count  = length(local.private_cidr)
   vpc_id = aws_vpc.main.id
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.g1.id
+    nat_gateway_id = aws_nat_gateway.g[count.index].id
   }
   tags = {
-    Name          = "epoch-rtb-priv1",
-    "Terraformed" = "true"
+    Name = "epoch-rtb-priv${count.index}"
   }
 }
 
-resource "aws_route_table" "private2" {
-  vpc_id = aws_vpc.main.id
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.g2.id
-  }
-  tags = {
-    Name          = "epoch-rtb-priv2",
-    "Terraformed" = "true"
-  }
-}
-
-resource "aws_route_table_association" "private1" {
-  subnet_id      = aws_subnet.private1.id
-  route_table_id = aws_route_table.private1.id
-}
-
-resource "aws_route_table_association" "private2" {
-  subnet_id      = aws_subnet.private2.id
-  route_table_id = aws_route_table.private2.id
+resource "aws_route_table_association" "private" {
+  count          = length(local.private_cidr)
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_route_table.private[count.index].id
 }
