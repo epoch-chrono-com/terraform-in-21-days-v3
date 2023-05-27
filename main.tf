@@ -3,6 +3,6 @@ resource "aws_instance" "app_server" {
   instance_type = "t4g.micro"
 
   tags = {
-    Name = "ExampleAppServerInstance"
+    Name = "${var.env_code}-ExampleAppServerInstance"
   }
 }

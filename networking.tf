@@ -1,7 +1,7 @@
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
   tags = {
-    "Name" = "epoch-vpc"
+    "Name" = "${var.env_code}-epoch-vpc"
   }
 }
 
@@ -11,7 +11,7 @@ resource "aws_subnet" "public" {
   cidr_block        = local.public_cidr[count.index]
   availability_zone = local.availability_zones[count.index]
   tags = {
-    "Name" = "epoch-subnet-pub${count.index + 1}"
+    "Name" = "${var.env_code}-epoch-subnet-pub${count.index + 1}"
   }
 }
 
@@ -21,14 +21,14 @@ resource "aws_subnet" "private" {
   cidr_block        = local.private_cidr[count.index]
   availability_zone = local.availability_zones[count.index]
   tags = {
-    "Name" = "epoch-subnet-priv${count.index + 1}"
+    "Name" = "${var.env_code}-epoch-subnet-priv${count.index + 1}"
   }
 }
 
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
   tags = {
-    "Name" = "epoch-igw"
+    "Name" = "${var.env_code}-epoch-igw"
   }
 
 }
@@ -40,7 +40,7 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.igw.id
   }
   tags = {
-    Name = "epoch-rtb-main"
+    Name = "${var.env_code}-epoch-rtb-main"
   }
 }
 
@@ -54,7 +54,7 @@ resource "aws_eip" "nat" {
   count = length(local.public_cidr)
   vpc   = true
   tags = {
-    Name = "epoch-eip-nat${count.index}"
+    Name = "${var.env_code}-epoch-eip-nat${count.index}"
   }
 }
 
@@ -63,7 +63,7 @@ resource "aws_nat_gateway" "g" {
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
   tags = {
-    Name = "epoch-ngw${count.index}"
+    Name = "${var.env_code}-epoch-ngw${count.index}"
   }
   depends_on = [
     aws_internet_gateway.igw
@@ -78,7 +78,7 @@ resource "aws_route_table" "private" {
     nat_gateway_id = aws_nat_gateway.g[count.index].id
   }
   tags = {
-    Name = "epoch-rtb-priv${count.index}"
+    Name = "${var.env_code}-epoch-rtb-priv${count.index}"
   }
 }
 
