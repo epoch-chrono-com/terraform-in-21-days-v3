@@ -56,3 +56,29 @@ resource "aws_instance" "private-instance" {
     Name = "${var.env_code}-private-ec2"
   }
 }
+
+resource "aws_security_group" "private-sg" {
+  name        = "${var.env_code}-private-sg"
+  description = "Allow inbound traffic"
+  vpc_id      = aws_vpc.main.id
+  ingress {
+    description      = "Allow all from my private ip"
+    from_port        = 0
+    to_port          = 0
+    protocol         = -1
+    security_groups  = [aws_security_group.public-sg.id]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+  egress {
+    description      = "Allow all to any ip"
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  tags = {
+    Name = "${var.env_code}-private-sg"
+  }
+}
