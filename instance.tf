@@ -10,6 +10,8 @@ resource "aws_instance" "public-instance" {
   associate_public_ip_address = true
   key_name                    = aws_key_pair.terraform-mentoring.key_name
   subnet_id                   = aws_subnet.public[0].id
+  user_data                   = file("./user-data.sh")
+  user_data_replace_on_change = true
   vpc_security_group_ids = [
     aws_security_group.public-sg.id,
   ]
@@ -29,6 +31,14 @@ resource "aws_security_group" "public-sg" {
     to_port          = 0
     protocol         = -1
     cidr_blocks      = ["${data.http.ip.response_body}/32"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+  ingress {
+    description      = "HTTP to anywhere"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "TCP"
+    cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
   egress {
