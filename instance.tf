@@ -1,12 +1,14 @@
-data "http" "ip" {
-  url = "https://ifconfig.me/ip"
+resource "aws_key_pair" "terraform-mentoring" {
+  key_name   = "terraform-mentoring"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC9IOJ15PY2JesXRp4xvYcfS5mLJYQCYGpd4d2WaLsXA"
 }
 
 resource "aws_instance" "public-instance" {
-  ami                         = "ami-0c00453583aaf434e" # ubuntu 22.04 ARM for gravitron instances
+  # ami                         = "ami-0c00453583aaf434e" # ubuntu 22.04 ARM for gravitron instances
+  ami                         = data.aws_ami.ubuntu.id
   instance_type               = "t4g.micro"
   associate_public_ip_address = true
-  key_name                    = "terraform-mentoring"
+  key_name                    = aws_key_pair.terraform-mentoring.key_name
   subnet_id                   = aws_subnet.public[0].id
   vpc_security_group_ids = [
     aws_security_group.public-sg.id,
@@ -44,9 +46,10 @@ resource "aws_security_group" "public-sg" {
 }
 
 resource "aws_instance" "private-instance" {
-  ami           = "ami-0c00453583aaf434e" # ubuntu 22.04 ARM for gravitron instances
+  # ami           = "ami-0c00453583aaf434e" # ubuntu 22.04 ARM for gravitron instances
+  ami           = data.aws_ami.ubuntu.id
   instance_type = "t4g.micro"
-  key_name      = "terraform-mentoring"
+  key_name      = aws_key_pair.terraform-mentoring.key_name
   subnet_id     = aws_subnet.private[0].id
   vpc_security_group_ids = [
     aws_security_group.private-sg.id,
