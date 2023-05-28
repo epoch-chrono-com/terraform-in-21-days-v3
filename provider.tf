@@ -9,7 +9,7 @@ terraform {
 }
 
 provider "aws" {
-  region  = "sa-east-1"
+  region  = "us-east-1"
   profile = "tf-mentor"
   default_tags {
     tags = {
