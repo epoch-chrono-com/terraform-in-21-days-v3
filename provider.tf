@@ -3,11 +3,12 @@ terraform {
     bucket = "terraform-mentoring-tf-remote-state"
     key    = "terraform.tfstate"
     region = "us-east-1"
+    dynamodb_table = "terraform-state-lock-dynamo"
   }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.65"
+      version = "~> 5.0"
     }
   }
   required_version = ">= 1.4.6"
